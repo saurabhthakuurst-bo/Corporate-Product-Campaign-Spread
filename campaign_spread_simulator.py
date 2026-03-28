@@ -655,7 +655,9 @@ def draw_network(G, seeds, activated=None, layout="spring"):
 # ─────────────────────────────────────────────
 # CHART BUILDERS
 # ─────────────────────────────────────────────
-def plot_adoption_curve(adoption_curve, total_nodes):
+
+
+def plot_adoption_curve(adoption_curve, total_nodes, key="adoption_curve_chart"):
     steps = list(range(len(adoption_curve)))
     pct = [round(v / total_nodes * 100, 1) for v in adoption_curve]
 
@@ -688,10 +690,10 @@ def plot_adoption_curve(adoption_curve, total_nodes):
         margin=dict(l=60, r=60, t=20, b=50),
         height=360,
     )
-    return fig
+    st.plotly_chart(fig, use_container_width=True, key=key)
 
 
-def plot_influencer_ranking(scores, seeds, top_n=20):
+def plot_influencer_ranking(scores, seeds, top_n=20, key="influencer_ranking_chart"):
     nodes = sorted(scores, key=scores.get, reverse=True)[:top_n]
     values = [scores[n] for n in nodes]
     colors = ["#f78166" if n in set(seeds) else "#388bfd" for n in nodes]
@@ -715,10 +717,10 @@ def plot_influencer_ranking(scores, seeds, top_n=20):
         height=max(300, top_n * 22),
         showlegend=False,
     )
-    return fig
+    st.plotly_chart(fig, use_container_width=True, key=key)
 
 
-def plot_strategy_comparison(strategy_results):
+def plot_strategy_comparison(strategy_results, key="strategy_comparison_chart"):
     strategies = list(strategy_results.keys())
     adopters = [strategy_results[s]["metrics"]["Total Adopters"] for s in strategies]
     rates = [strategy_results[s]["metrics"]["Adoption Rate (%)"] for s in strategies]
@@ -726,7 +728,8 @@ def plot_strategy_comparison(strategy_results):
 
     palette = ["#388bfd", "#3fb950", "#d2a679", "#f78166", "#bc8cff"]
 
-    fig = make_subplots(rows=1, cols=3, subplot_titles=["Total Adopters", "Adoption Rate (%)", "Seed Efficiency"])
+    fig = make_subplots(rows=1, cols=3,
+                        subplot_titles=["Total Adopters", "Adoption Rate (%)", "Seed Efficiency"])
     for i, (strat, adopt, rate, eff, color) in enumerate(zip(strategies, adopters, rates, efficiency, palette)):
         fig.add_trace(go.Bar(name=strat, x=[strat], y=[adopt], marker_color=color, showlegend=(i == 0)), row=1, col=1)
         fig.add_trace(go.Bar(name=strat, x=[strat], y=[rate], marker_color=color, showlegend=False), row=1, col=2)
@@ -743,10 +746,11 @@ def plot_strategy_comparison(strategy_results):
     )
     for ax in ["xaxis", "xaxis2", "xaxis3", "yaxis", "yaxis2", "yaxis3"]:
         fig.update_layout(**{ax: dict(gridcolor="#21262d", tickfont=dict(color="#8b949e", size=10))})
-    return fig
+
+    st.plotly_chart(fig, use_container_width=True, key=key)
 
 
-def plot_funnel(result, total_nodes):
+def plot_funnel(result, total_nodes, key="funnel_chart"):
     adopters = int(result["mean_adopters"])
     seeds = len(result["seeds"])
     aware = adopters
@@ -768,7 +772,7 @@ def plot_funnel(result, total_nodes):
         margin=dict(l=40, r=40, t=20, b=20),
         height=320,
     )
-    return fig
+    st.plotly_chart(fig, use_container_width=True, key=key)
 
 
 # ─────────────────────────────────────────────
