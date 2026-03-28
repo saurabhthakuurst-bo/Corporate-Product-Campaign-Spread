@@ -655,9 +655,7 @@ def draw_network(G, seeds, activated=None, layout="spring"):
 # ─────────────────────────────────────────────
 # CHART BUILDERS
 # ─────────────────────────────────────────────
-
-
-def plot_adoption_curve(adoption_curve, total_nodes, key="adoption_curve_chart"):
+def plot_adoption_curve(adoption_curve, total_nodes):
     steps = list(range(len(adoption_curve)))
     pct = [round(v / total_nodes * 100, 1) for v in adoption_curve]
 
@@ -690,10 +688,10 @@ def plot_adoption_curve(adoption_curve, total_nodes, key="adoption_curve_chart")
         margin=dict(l=60, r=60, t=20, b=50),
         height=360,
     )
-    st.plotly_chart(fig, use_container_width=True, key=key)
+    return fig
 
 
-def plot_influencer_ranking(scores, seeds, top_n=20, key="influencer_ranking_chart"):
+def plot_influencer_ranking(scores, seeds, top_n=20):
     nodes = sorted(scores, key=scores.get, reverse=True)[:top_n]
     values = [scores[n] for n in nodes]
     colors = ["#f78166" if n in set(seeds) else "#388bfd" for n in nodes]
@@ -717,10 +715,10 @@ def plot_influencer_ranking(scores, seeds, top_n=20, key="influencer_ranking_cha
         height=max(300, top_n * 22),
         showlegend=False,
     )
-    st.plotly_chart(fig, use_container_width=True, key=key)
+    return fig
 
 
-def plot_strategy_comparison(strategy_results, key="strategy_comparison_chart"):
+def plot_strategy_comparison(strategy_results):
     strategies = list(strategy_results.keys())
     adopters = [strategy_results[s]["metrics"]["Total Adopters"] for s in strategies]
     rates = [strategy_results[s]["metrics"]["Adoption Rate (%)"] for s in strategies]
@@ -728,8 +726,7 @@ def plot_strategy_comparison(strategy_results, key="strategy_comparison_chart"):
 
     palette = ["#388bfd", "#3fb950", "#d2a679", "#f78166", "#bc8cff"]
 
-    fig = make_subplots(rows=1, cols=3,
-                        subplot_titles=["Total Adopters", "Adoption Rate (%)", "Seed Efficiency"])
+    fig = make_subplots(rows=1, cols=3, subplot_titles=["Total Adopters", "Adoption Rate (%)", "Seed Efficiency"])
     for i, (strat, adopt, rate, eff, color) in enumerate(zip(strategies, adopters, rates, efficiency, palette)):
         fig.add_trace(go.Bar(name=strat, x=[strat], y=[adopt], marker_color=color, showlegend=(i == 0)), row=1, col=1)
         fig.add_trace(go.Bar(name=strat, x=[strat], y=[rate], marker_color=color, showlegend=False), row=1, col=2)
@@ -746,11 +743,10 @@ def plot_strategy_comparison(strategy_results, key="strategy_comparison_chart"):
     )
     for ax in ["xaxis", "xaxis2", "xaxis3", "yaxis", "yaxis2", "yaxis3"]:
         fig.update_layout(**{ax: dict(gridcolor="#21262d", tickfont=dict(color="#8b949e", size=10))})
+    return fig
 
-    st.plotly_chart(fig, use_container_width=True, key=key)
 
-
-def plot_funnel(result, total_nodes, key="funnel_chart"):
+def plot_funnel(result, total_nodes):
     adopters = int(result["mean_adopters"])
     seeds = len(result["seeds"])
     aware = adopters
@@ -772,7 +768,7 @@ def plot_funnel(result, total_nodes, key="funnel_chart"):
         margin=dict(l=40, r=40, t=20, b=20),
         height=320,
     )
-    st.plotly_chart(fig, use_container_width=True, key=key)
+    return fig
 
 
 # ─────────────────────────────────────────────
@@ -982,7 +978,7 @@ with tabs[1]:
         layout_choice = st.radio("Graph Layout", ["spring", "kamada_kawai", "circular"], horizontal=True)
         with st.spinner("Rendering network..."):
             fig = draw_network(G, seeds, activated, layout=layout_choice)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key="network_graph")
 
         # Degree distribution
         degrees = [d for _, d in G.degree()]
@@ -998,7 +994,7 @@ with tabs[1]:
             title_font=dict(color="#e6edf3"),
             height=280, margin=dict(l=40, r=20, t=50, b=40),
         )
-        st.plotly_chart(deg_fig, use_container_width=True)
+        st.plotly_chart(deg_fig, use_container_width=True, key="degree_dist")
 
 
 # ─────────────────────────── TAB 3: INFLUENCERS ──────────────────────────────
@@ -1030,7 +1026,7 @@ with tabs[2]:
         st.dataframe(influencer_df, use_container_width=True, hide_index=True)
 
         st.markdown("#### Influence Score Chart")
-        st.plotly_chart(plot_influencer_ranking(scores, seeds, top_n=20), use_container_width=True)
+        st.plotly_chart(plot_influencer_ranking(scores, seeds, top_n=20), use_container_width=True, key="influencer_ranking")
 
         st.markdown("---")
         st.markdown("#### Why These Users Were Selected")
@@ -1061,15 +1057,15 @@ with tabs[3]:
         """, unsafe_allow_html=True)
 
         st.markdown("#### Adoption Over Time")
-        st.plotly_chart(plot_adoption_curve(result["adoption_curve"], result["total_nodes"]), use_container_width=True)
+        st.plotly_chart(plot_adoption_curve(result["adoption_curve"], result["total_nodes"]), use_container_width=True, key="adoption_curve")
 
         st.markdown("#### Network State After Simulation")
         with st.spinner("Rendering final network state..."):
             fig_final = draw_network(G, result["seeds"], result["final_activated"])
-        st.plotly_chart(fig_final, use_container_width=True)
+        st.plotly_chart(fig_final, use_container_width=True, key="network_final")
 
         st.markdown("#### Adoption Funnel")
-        st.plotly_chart(plot_funnel(result, result["total_nodes"]), use_container_width=True)
+        st.plotly_chart(plot_funnel(result, result["total_nodes"]), use_container_width=True, key="adoption_funnel")
 
 
 # ─────────────────────────── TAB 5: DASHBOARD ──────────────────────────────
@@ -1145,7 +1141,7 @@ with tabs[5]:
         strat_results = st.session_state.strategy_results
 
         st.markdown("#### Strategy Comparison Chart")
-        st.plotly_chart(plot_strategy_comparison(strat_results), use_container_width=True)
+        st.plotly_chart(plot_strategy_comparison(strat_results), use_container_width=True, key="strategy_comparison")
 
         st.markdown("#### Comparison Table")
         rows = []
@@ -1178,7 +1174,7 @@ with tabs[5]:
             legend=dict(bgcolor="rgba(0,0,0,0)", font=dict(color="#e6edf3")),
             height=380, margin=dict(l=60, r=40, t=20, b=50),
         )
-        st.plotly_chart(curve_fig, use_container_width=True)
+        st.plotly_chart(curve_fig, use_container_width=True, key="strategy_curves")
 
 
 # ─────────────────────────── TAB 7: RECOMMENDATION ──────────────────────────────
